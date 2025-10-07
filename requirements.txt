@@ -1,4 +1,5 @@
-streamlit==1.32.2
-pillow
+streamlit
+Pillow
 numpy
-streamlit-drawable-canvas==0.9.3
+pandas
+streamlit-image-coordinates
