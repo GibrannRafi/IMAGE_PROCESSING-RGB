@@ -35,7 +35,7 @@ with col1:
         st.write(f"🖼️ Ukuran gambar: **{image.width} x {image.height}** px")
 
         # Resize otomatis biar nggak kegedean di mobile
-        max_display_width = 400  # px
+        max_display_width = 400
         if image.width > max_display_width:
             aspect_ratio = image.height / image.width
             new_height = int(max_display_width * aspect_ratio)
@@ -54,6 +54,19 @@ with col1:
                 r, g, b = img_array[y_scaled, x_scaled]
                 st.session_state["last_coords"] = (x_scaled, y_scaled, (r, g, b))
 
+                # Ambil area 3x3 pixel di sekitar titik
+                half = 1  # radius = 1 berarti 3x3
+                y_min, y_max = max(0, y_scaled - half), min(image.height, y_scaled + half + 1)
+                x_min, x_max = max(0, x_scaled - half), min(image.width, x_scaled + half + 1)
+
+                region = img_array[y_min:y_max, x_min:x_max]
+                df = pd.DataFrame(
+                    [[f"({r},{g},{b})" for (r, g, b) in row] for row in region],
+                    index=[y for y in range(y_min, y_max)],
+                    columns=[x for x in range(x_min, x_max)]
+                )
+                st.session_state["pixel_table"] = df
+
 with col2:
     st.subheader("📍 Info Koordinat & Warna")
 
@@ -66,7 +79,7 @@ with col2:
             unsafe_allow_html=True,
         )
 
-        # Crosshair marker di preview kecil
+        # Crosshair di preview
         img_preview = image.copy()
         draw = ImageDraw.Draw(img_preview)
         cross_size = 10
@@ -75,5 +88,11 @@ with col2:
 
         st.image(img_preview.resize((200, int(200 * image.height / image.width))), caption="Titik yang dipilih")
 
+        # Tampilkan tabel pixel
+        st.write("### 🧾 Tabel Pixel di Sekitar Titik (3x3)")
+        st.dataframe(st.session_state["pixel_table"])
+
     else:
         st.info("Klik gambar di kiri untuk melihat warna dan koordinat.")
+        st.write("### 🧾 Tabel Pixel di Sekitar Titik (3x3)")
+        st.write("Belum ada titik yang dipilih.")
