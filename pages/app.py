@@ -1,78 +1,107 @@
 import streamlit as st
-from streamlit_drawable_canvas import st_canvas
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
-import io
+import pandas as pd
+from streamlit_image_coordinates import streamlit_image_coordinates
 
-st.set_page_config(page_title="🎨 RGB Color Picker", layout="centered")
-st.title("🎨 RGB Color Picker dari Gambar")
+st.set_page_config(page_title="RGB Pixel Viewer", layout="wide")
+st.title("🎯 Deteksi Warna & Koordinat dari Gambar")
 
-uploaded_file = st.file_uploader("Upload gambar", type=["png", "jpg", "jpeg"])
+# CSS biar responsive di mobile
+st.markdown("""
+    <style>
+    [data-testid="stImage"] img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 1rem;
+        }
+        h1 { font-size: 1.6rem !important; }
+        .stDataFrame { font-size: 0.75rem; }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-if uploaded_file is not None:
-    img = Image.open(uploaded_file).convert("RGB")
-    img_array = np.array(img)
+col1, col2 = st.columns([2, 1])
 
-    # Tentukan ukuran canvas biar responsif
-    is_mobile = st.session_state.get("is_mobile", False)
-    canvas_width = 300 if is_mobile else 500
-    aspect_ratio = img.height / img.width
-    canvas_height = int(canvas_width * aspect_ratio)
+with col1:
+    uploaded_file = st.file_uploader("📸 Upload gambar", type=["png", "jpg", "jpeg"])
 
-    st.write("🖱️ Klik di gambar untuk ambil warna pixel dan lihat tabel sekitar 5x5")
+    if uploaded_file:
+        image = Image.open(uploaded_file).convert("RGB")
+        img_array = np.array(image)
+        height, width = img_array.shape[:2]
+        st.write(f"🖼️ Ukuran gambar: **{width} x {height} px**")
 
-    canvas_result = st_canvas(
-        fill_color="rgba(255,165,0,0.3)",
-        stroke_width=1,
-        background_image=img,
-        update_streamlit=True,
-        height=canvas_height,
-        width=canvas_width,
-        drawing_mode="transform",
-        key="canvas",
-    )
+        # Buat tabel semua pixel (hati-hati gambar besar bisa berat!)
+        df_all = pd.DataFrame(
+            [[f"({r},{g},{b})" for (r,g,b) in row] for row in img_array],
+            index=[y for y in range(height)],
+            columns=[x for x in range(width)]
+        )
+        st.write("📊 **Tabel Seluruh Pixel (RGB):**")
+        st.dataframe(df_all.head(20), use_container_width=True)  # tampilkan sebagian biar ringan
 
-    if canvas_result.json_data is not None and len(canvas_result.json_data["objects"]) > 0:
-        # Ambil titik klik terakhir
-        obj = canvas_result.json_data["objects"][-1]
-        x, y = int(obj["left"]), int(obj["top"])
+        # Resize otomatis biar gak kegedean di mobile
+        max_display_width = 400
+        if width > max_display_width:
+            aspect_ratio = height / width
+            new_height = int(max_display_width * aspect_ratio)
+            image_display = image.resize((max_display_width, new_height))
+        else:
+            image_display = image
 
-        # Sesuaikan dengan ukuran asli gambar
-        scale_x = img.width / canvas_width
-        scale_y = img.height / canvas_height
-        x_real, y_real = int(x * scale_x), int(y * scale_y)
+        st.write("🖱️ Klik pada gambar di bawah ini:")
+        coords = streamlit_image_coordinates(image_display, key="pilih_pixel")
 
-        if 0 <= x_real < img.width and 0 <= y_real < img.height:
-            color = img_array[y_real, x_real]
-            st.markdown(
-                f"**📍 Koordinat Pixel:** ({x_real}, {y_real})  \n"
-                f"**🎨 RGB:** {tuple(color)}"
-            )
+        if coords is not None:
+            x_scaled = int(coords["x"] * (width / image_display.width))
+            y_scaled = int(coords["y"] * (height / image_display.height))
 
-            # Ambil area 5x5 sekitar titik
-            x_min, x_max = max(0, x_real - 2), min(img.width, x_real + 3)
-            y_min, y_max = max(0, y_real - 2), min(img.height, y_real + 3)
-            color_block = img_array[y_min:y_max, x_min:x_max, :]
+            if 0 <= x_scaled < width and 0 <= y_scaled < height:
+                r, g, b = img_array[y_scaled, x_scaled]
+                st.session_state["last_coords"] = (x_scaled, y_scaled, (r, g, b))
 
-            # Buat tabel HTML berwarna
-            html_table = "<table style='border-collapse: collapse;'>"
-            for row in color_block:
-                html_table += "<tr>"
-                for rgb in row:
-                    color_hex = "#{:02x}{:02x}{:02x}".format(*rgb)
-                    html_table += f"<td style='width:30px;height:30px;background-color:{color_hex};border:1px solid #aaa;' title='{rgb}'></td>"
-                html_table += "</tr>"
-            html_table += "</table>"
+                # Ambil area sekitar titik (5x5)
+                half = 2
+                y_min, y_max = max(0, y_scaled - half), min(height, y_scaled + half + 1)
+                x_min, x_max = max(0, x_scaled - half), min(width, x_scaled + half + 1)
+                region = img_array[y_min:y_max, x_min:x_max]
+                df_region = pd.DataFrame(
+                    [[f"({r},{g},{b})" for (r,g,b) in row] for row in region],
+                    index=[y for y in range(y_min, y_max)],
+                    columns=[x for x in range(x_min, x_max)]
+                )
+                st.session_state["pixel_table"] = df_region
 
-            st.markdown("### 🔍 Warna sekitar pixel (5x5):")
-            st.markdown(html_table, unsafe_allow_html=True)
+with col2:
+    st.subheader("📍 Info Koordinat & Warna")
 
-            # ======== Tambahan: mini zoom-in preview =========
-            zoom_area = img.crop((x_min, y_min, x_max, y_max))
-            zoom_size = 200  # perbesar tampilannya biar jelas
-            zoom_img = zoom_area.resize((zoom_size, zoom_size), Image.NEAREST)
+    if "last_coords" in st.session_state:
+        x, y, (r, g, b) = st.session_state["last_coords"]
+        st.write(f"**Koordinat:** (x={x}, y={y})")
+        st.write(f"**RGB:** ({r}, {g}, {b})")
+        st.markdown(
+            f"<div style='width:80px;height:80px;background-color:rgb({r},{g},{b});border:2px solid #fff;border-radius:10px'></div>",
+            unsafe_allow_html=True,
+        )
 
-            st.markdown("### 🔎 Zoom-in Area (5x5 pixel diperbesar):")
-            st.image(zoom_img, caption="Zoomed 5x5 Area", use_container_width=False)
-else:
-    st.info("📁 Silakan upload gambar dulu untuk mulai.")
+        # Crosshair di preview
+        img_preview = image.copy()
+        draw = ImageDraw.Draw(img_preview)
+        cross_size = 10
+        draw.line((x - cross_size, y, x + cross_size, y), fill=(255, 0, 0), width=2)
+        draw.line((x, y - cross_size, x, y + cross_size), fill=(255, 0, 0), width=2)
+        st.image(img_preview.resize((200, int(200 * image.height / image.width))), caption="Titik yang dipilih")
+
+        # Tabel pixel sekitar titik
+        st.write("### 🧾 Tabel Pixel Sekitar Titik (5x5)")
+        st.dataframe(st.session_state["pixel_table"], use_container_width=True)
+
+    else:
+        st.info("Klik gambar di kiri untuk melihat warna dan koordinat.")
+        st.write("### 🧾 Tabel Pixel Sekitar Titik (5x5)")
+        st.write("Belum ada titik yang dipilih.")
