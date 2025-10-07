@@ -36,15 +36,16 @@ if uploaded_file is not None:
 
     # Gambar langsung di-canvas dengan ukuran asli
     canvas_result = st_canvas(
-        fill_color="rgba(255,165,0,0.3)",
-        stroke_width=1,
-        background_image=img,
-        update_streamlit=True,
-        height=canvas_height,
-        width=canvas_width,
-        drawing_mode="transform",
-        key="canvas",
-    )
+    fill_color="rgba(255,165,0,0.3)",
+    stroke_width=2,
+    stroke_color="blue",
+    background_image=Image.open(uploaded_image) if uploaded_image else None,
+    update_streamlit=True,
+    height=img.height if uploaded_image else 300,
+    width=img.width if uploaded_image else 300,
+    drawing_mode="rect",
+    key="canvas",
+)
 
     if canvas_result.json_data is not None and len(canvas_result.json_data["objects"]) > 0:
         obj = canvas_result.json_data["objects"][-1]
