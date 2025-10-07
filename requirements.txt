@@ -2,4 +2,5 @@ streamlit
 Pillow
 numpy
 pandas
-streamlit-image-coordinates
+streamlit-drawable-canvas
+
