@@ -20,6 +20,7 @@ st.markdown("""
             padding: 1rem;
         }
         h1 { font-size: 1.6rem !important; }
+        .stDataFrame { font-size: 0.75rem; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -32,12 +33,22 @@ with col1:
     if uploaded_file:
         image = Image.open(uploaded_file).convert("RGB")
         img_array = np.array(image)
-        st.write(f"🖼️ Ukuran gambar: **{image.width} x {image.height}** px")
+        height, width = img_array.shape[:2]
+        st.write(f"🖼️ Ukuran gambar: **{width} x {height} px**")
 
-        # Resize otomatis biar nggak kegedean di mobile
+        # Buat tabel semua pixel (hati-hati gambar besar bisa berat!)
+        df_all = pd.DataFrame(
+            [[f"({r},{g},{b})" for (r,g,b) in row] for row in img_array],
+            index=[y for y in range(height)],
+            columns=[x for x in range(width)]
+        )
+        st.write("📊 **Tabel Seluruh Pixel (RGB):**")
+        st.dataframe(df_all.head(20), use_container_width=True)  # tampilkan sebagian biar ringan
+
+        # Resize otomatis biar gak kegedean di mobile
         max_display_width = 400
-        if image.width > max_display_width:
-            aspect_ratio = image.height / image.width
+        if width > max_display_width:
+            aspect_ratio = height / width
             new_height = int(max_display_width * aspect_ratio)
             image_display = image.resize((max_display_width, new_height))
         else:
@@ -47,25 +58,24 @@ with col1:
         coords = streamlit_image_coordinates(image_display, key="pilih_pixel")
 
         if coords is not None:
-            x_scaled = int(coords["x"] * (image.width / image_display.width))
-            y_scaled = int(coords["y"] * (image.height / image_display.height))
+            x_scaled = int(coords["x"] * (width / image_display.width))
+            y_scaled = int(coords["y"] * (height / image_display.height))
 
-            if 0 <= x_scaled < image.width and 0 <= y_scaled < image.height:
+            if 0 <= x_scaled < width and 0 <= y_scaled < height:
                 r, g, b = img_array[y_scaled, x_scaled]
                 st.session_state["last_coords"] = (x_scaled, y_scaled, (r, g, b))
 
-                # Ambil area 3x3 pixel di sekitar titik
-                half = 1  # radius = 1 berarti 3x3
-                y_min, y_max = max(0, y_scaled - half), min(image.height, y_scaled + half + 1)
-                x_min, x_max = max(0, x_scaled - half), min(image.width, x_scaled + half + 1)
-
+                # Ambil area sekitar titik (5x5)
+                half = 2
+                y_min, y_max = max(0, y_scaled - half), min(height, y_scaled + half + 1)
+                x_min, x_max = max(0, x_scaled - half), min(width, x_scaled + half + 1)
                 region = img_array[y_min:y_max, x_min:x_max]
-                df = pd.DataFrame(
-                    [[f"({r},{g},{b})" for (r, g, b) in row] for row in region],
+                df_region = pd.DataFrame(
+                    [[f"({r},{g},{b})" for (r,g,b) in row] for row in region],
                     index=[y for y in range(y_min, y_max)],
                     columns=[x for x in range(x_min, x_max)]
                 )
-                st.session_state["pixel_table"] = df
+                st.session_state["pixel_table"] = df_region
 
 with col2:
     st.subheader("📍 Info Koordinat & Warna")
@@ -85,14 +95,13 @@ with col2:
         cross_size = 10
         draw.line((x - cross_size, y, x + cross_size, y), fill=(255, 0, 0), width=2)
         draw.line((x, y - cross_size, x, y + cross_size), fill=(255, 0, 0), width=2)
-
         st.image(img_preview.resize((200, int(200 * image.height / image.width))), caption="Titik yang dipilih")
 
-        # Tampilkan tabel pixel
-        st.write("### 🧾 Tabel Pixel di Sekitar Titik (3x3)")
-        st.dataframe(st.session_state["pixel_table"])
+        # Tabel pixel sekitar titik
+        st.write("### 🧾 Tabel Pixel Sekitar Titik (5x5)")
+        st.dataframe(st.session_state["pixel_table"], use_container_width=True)
 
     else:
         st.info("Klik gambar di kiri untuk melihat warna dan koordinat.")
-        st.write("### 🧾 Tabel Pixel di Sekitar Titik (3x3)")
+        st.write("### 🧾 Tabel Pixel Sekitar Titik (5x5)")
         st.write("Belum ada titik yang dipilih.")
