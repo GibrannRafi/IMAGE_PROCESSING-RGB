@@ -41,8 +41,8 @@ if uploaded_file is not None:
     stroke_color="blue",
     background_image=Image.open(uploaded_file) if uploaded_file else None,
     update_streamlit=True,
-    height=img.height if uploaded_image else 300,
-    width=img.width if uploaded_image else 300,
+    height=img.height if uploaded_file else 300,
+    width=img.width if uploaded_file else 300,
     drawing_mode="rect",
     key="canvas",
 )
