@@ -39,7 +39,7 @@ if uploaded_file is not None:
     fill_color="rgba(255,165,0,0.3)",
     stroke_width=2,
     stroke_color="blue",
-    background_image=Image.open(uploaded_image) if uploaded_image else None,
+    background_image=Image.open(uploaded_file) if uploaded_file else None,
     update_streamlit=True,
     height=img.height if uploaded_image else 300,
     width=img.width if uploaded_image else 300,
