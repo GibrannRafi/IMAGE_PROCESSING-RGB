@@ -1,4 +1,4 @@
-!pip install streamlit-drawable-canvas pillow numpy
+
 
 
 import streamlit as st
