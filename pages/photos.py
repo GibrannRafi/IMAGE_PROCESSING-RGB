@@ -11,7 +11,7 @@ st.markdown("<p style='text-align:center;'>Grayscale, Biner, Brightness, Aritmat
 uploaded_file = st.file_uploader("📤 Upload gambar", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
-    image = Image.open(uploaded_file).convert("RGB")
+    image = Image.open(uploaded_file)
     img_np = np.array(image)
     st.image(image, caption="Gambar Asli", use_container_width=True)
 
