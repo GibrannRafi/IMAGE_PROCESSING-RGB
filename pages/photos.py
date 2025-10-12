@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image, ImageOps, ImageEnhance
 import numpy as np
-import cv2
+
 
 st.set_page_config(page_title="🧠 Pengolahan Citra Digital", layout="wide")
 
