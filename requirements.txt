@@ -2,7 +2,6 @@ streamlit
 Pillow
 numpy
 pandas
-opencv-python>=4.8.0
-streamlit-image-coordinates
-tk
+opencv-python-headless>=4.8.0
 matplotlib==3.9.2
+streamlit-image-coordinates
