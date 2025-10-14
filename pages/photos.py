@@ -1,109 +1,115 @@
 import streamlit as st
-from PIL import Image, ImageOps, ImageEnhance
+import cv2
 import numpy as np
+from PIL import Image
+from io import BytesIO
+from image_processing_app import ImageProcessingApp  # file Tkinter kamu
 
+# ===============================
+# SETUP STREAMLIT
+# ===============================
+st.set_page_config(page_title="Aplikasi PCD Web", layout="centered")
 
-st.set_page_config(page_title="🧠 Pengolahan Citra Digital", layout="wide")
+st.title("🧠 Aplikasi Pengolahan Citra Digital (Versi Web)")
+st.write("Gunakan fitur di bawah ini untuk melakukan operasi citra digital secara online.")
 
-st.markdown("<h1 style='text-align:center;'>🧠 Pengolahan Citra Digital</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>Grayscale, Biner, Brightness, Aritmatika, Boolean, Geometri</p>", unsafe_allow_html=True)
-
-uploaded_file = st.file_uploader("📤 Upload gambar", type=["jpg", "jpeg", "png"])
+# ===============================
+# UPLOAD GAMBAR
+# ===============================
+uploaded_file = st.file_uploader("📤 Upload gambar pertama", type=["jpg", "jpeg", "png", "bmp"])
 
 if uploaded_file:
     image = Image.open(uploaded_file)
     img_np = np.array(image)
-    st.image(image, caption="Gambar Asli", use_container_width=True)
+    st.image(image, caption="Gambar 1", use_container_width=True)
 
-    st.markdown("---")
+    # Simpan citra di format OpenCV (BGR)
+    img_cv2 = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+    # ===============================
+    # PILIH OPERASI
+    # ===============================
+    st.subheader("⚙️ Pilih Operasi")
+
     operasi = st.selectbox(
-        "🔹 Pilih Operasi Pengolahan Citra:",
+        "Pilih jenis operasi:",
         [
+            "Citra Biner",
             "Grayscale",
-            "Biner (Threshold)",
-            "Brightness",
-            "Aritmatika (+, -)",
-            "Boolean (AND, OR, XOR)",
-            "Geometri (Rotate, Flip)"
+            "Atur Kecerahan",
+            "Operasi Aritmetika (2 Gambar)",
+            "Operasi Boolean (2 Gambar)",
+            "Operasi Geometri"
         ]
     )
 
-    # ======== 1. GRAYSCALE ========
-    if operasi == "Grayscale":
-        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-        st.image(gray, caption="Hasil Grayscale", use_container_width=True, channels="GRAY")
+    # ===============================
+    # OPERASI CITRA
+    # ===============================
+    if operasi == "Citra Biner":
+        ambang = st.slider("Nilai Ambang (0-255)", 0, 255, 128)
+        citra_gray = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
+        _, citra_biner = cv2.threshold(citra_gray, ambang, 255, cv2.THRESH_BINARY)
+        st.image(citra_biner, caption=f"Citra Biner (Ambang={ambang})", use_container_width=True)
 
-    # ======== 2. BINER ========
-    elif operasi == "Biner (Threshold)":
-        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-        thresh_val = st.slider("Tentukan Nilai Threshold", 0, 255, 128)
-        _, binary = cv2.threshold(gray, thresh_val, 255, cv2.THRESH_BINARY)
-        st.image(binary, caption=f"Hasil Citra Biner (Threshold={thresh_val})", use_container_width=True, channels="GRAY")
+    elif operasi == "Grayscale":
+        citra_gray = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
+        st.image(citra_gray, caption="Citra Grayscale", use_container_width=True)
 
-    # ======== 3. BRIGHTNESS ========
-    elif operasi == "Brightness":
-        bright_val = st.slider("Atur Brightness", 0.1, 3.0, 1.0, 0.1)
-        enhancer = ImageEnhance.Brightness(image)
-        bright_img = enhancer.enhance(bright_val)
-        st.image(bright_img, caption=f"Brightness x{bright_val}", use_container_width=True)
-
-    # ======== 4. ARITMATIKA ========
-    elif operasi == "Aritmatika (+, -)":
-        st.info("Upload gambar kedua untuk operasi aritmatika.")
-        file2 = st.file_uploader("📎 Upload gambar kedua", type=["jpg", "jpeg", "png"], key="img2")
-        if file2:
-            image2 = Image.open(file2).convert("RGB").resize(image.size)
-            img2_np = np.array(image2)
-            col1, col2 = st.columns(2)
-            with col1: st.image(image, caption="Gambar 1")
-            with col2: st.image(image2, caption="Gambar 2")
-
-            jenis = st.radio("Pilih Operasi:", ["Penjumlahan (+)", "Pengurangan (-)"])
-            if jenis == "Penjumlahan (+)":
-                result = cv2.add(img_np, img2_np)
-                st.image(result, caption="Hasil Penjumlahan", use_container_width=True)
-            else:
-                result = cv2.subtract(img_np, img2_np)
-                st.image(result, caption="Hasil Pengurangan", use_container_width=True)
-
-    # ======== 5. BOOLEAN ========
-    elif operasi == "Boolean (AND, OR, XOR)":
-        st.info("Upload dua citra biner (hitam putih) untuk operasi boolean.")
-        file2 = st.file_uploader("📎 Upload gambar kedua", type=["jpg", "jpeg", "png"], key="bool2")
-        if file2:
-            img1_gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-            _, img1_bin = cv2.threshold(img1_gray, 128, 255, cv2.THRESH_BINARY)
-
-            img2 = Image.open(file2).convert("RGB").resize(image.size)
-            img2_np = np.array(img2)
-            img2_gray = cv2.cvtColor(img2_np, cv2.COLOR_RGB2GRAY)
-            _, img2_bin = cv2.threshold(img2_gray, 128, 255, cv2.THRESH_BINARY)
-
-            operasi_bool = st.radio("Pilih Operasi Boolean:", ["AND", "OR", "XOR"])
-            if operasi_bool == "AND":
-                result = cv2.bitwise_and(img1_bin, img2_bin)
-            elif operasi_bool == "OR":
-                result = cv2.bitwise_or(img1_bin, img2_bin)
-            else:
-                result = cv2.bitwise_xor(img1_bin, img2_bin)
-
-            col1, col2, col3 = st.columns(3)
-            with col1: st.image(img1_bin, caption="Citra 1 (Biner)", channels="GRAY")
-            with col2: st.image(img2_bin, caption="Citra 2 (Biner)", channels="GRAY")
-            with col3: st.image(result, caption=f"Hasil {operasi_bool}", channels="GRAY")
-
-    # ======== 6. GEOMETRI ========
-    elif operasi == "Geometri (Rotate, Flip)":
-        aksi = st.radio("Pilih Transformasi:", ["Rotate 90°", "Flip Horizontal", "Flip Vertical"])
-        if aksi == "Rotate 90°":
-            rotated = cv2.rotate(img_np, cv2.ROTATE_90_CLOCKWISE)
-            st.image(rotated, caption="Rotasi 90°", use_container_width=True)
-        elif aksi == "Flip Horizontal":
-            flipped = cv2.flip(img_np, 1)
-            st.image(flipped, caption="Flip Horizontal", use_container_width=True)
+    elif operasi == "Atur Kecerahan":
+        nilai = st.slider("Nilai Kecerahan (-100 sampai 100)", -100, 100, 30)
+        matriks_kecerahan = np.ones(img_cv2.shape, dtype="uint8") * abs(nilai)
+        if nilai > 0:
+            citra = cv2.add(img_cv2, matriks_kecerahan)
         else:
-            flipped = cv2.flip(img_np, 0)
-            st.image(flipped, caption="Flip Vertical", use_container_width=True)
+            citra = cv2.subtract(img_cv2, matriks_kecerahan)
+        st.image(cv2.cvtColor(citra, cv2.COLOR_BGR2RGB),
+                 caption=f"Citra setelah kecerahan {nilai}",
+                 use_container_width=True)
 
-else:
-    st.info("📁 Silakan upload gambar terlebih dahulu.")
+    elif operasi == "Operasi Aritmetika (2 Gambar)":
+        uploaded_file2 = st.file_uploader("Upload gambar kedua", type=["jpg", "jpeg", "png", "bmp"])
+        if uploaded_file2:
+            img2 = np.array(Image.open(uploaded_file2))
+            img2_bgr = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
+            img2_resized = cv2.resize(img2_bgr, (img_cv2.shape[1], img_cv2.shape[0]))
+
+            sum_img = cv2.add(img_cv2, img2_resized)
+            sub_img = cv2.subtract(img_cv2, img2_resized)
+
+            st.image([cv2.cvtColor(sum_img, cv2.COLOR_BGR2RGB),
+                      cv2.cvtColor(sub_img, cv2.COLOR_BGR2RGB)],
+                     caption=["Penjumlahan", "Pengurangan"])
+
+    elif operasi == "Operasi Boolean (2 Gambar)":
+        uploaded_file2 = st.file_uploader("Upload gambar kedua", type=["jpg", "jpeg", "png", "bmp"])
+        if uploaded_file2:
+            img2 = np.array(Image.open(uploaded_file2))
+            img2_bgr = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
+            img2_resized = cv2.resize(img2_bgr, (img_cv2.shape[1], img_cv2.shape[0]))
+
+            g1 = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
+            g2 = cv2.cvtColor(img2_resized, cv2.COLOR_BGR2GRAY)
+
+            _, b1 = cv2.threshold(g1, 128, 255, cv2.THRESH_BINARY)
+            _, b2 = cv2.threshold(g2, 128, 255, cv2.THRESH_BINARY)
+
+            and_op = cv2.bitwise_and(b1, b2)
+            or_op = cv2.bitwise_or(b1, b2)
+            xor_op = cv2.bitwise_xor(b1, b2)
+            not_op = cv2.bitwise_not(b1)
+
+            st.image([and_op, or_op, xor_op, not_op],
+                     caption=["AND", "OR", "XOR", "NOT Citra 1"])
+
+    elif operasi == "Operasi Geometri":
+        from PIL import ImageOps
+        citra_pil = Image.fromarray(cv2.cvtColor(img_cv2, cv2.COLOR_BGR2RGB))
+
+        flip_h = ImageOps.mirror(citra_pil)
+        flip_v = ImageOps.flip(citra_pil)
+        rot_90 = citra_pil.rotate(90, expand=True)
+        rot_45 = citra_pil.rotate(45, expand=True)
+
+        st.image([flip_h, flip_v, rot_90, rot_45],
+                 caption=["Flip Horizontal", "Flip Vertikal", "Rotasi 90°", "Rotasi 45°"])
