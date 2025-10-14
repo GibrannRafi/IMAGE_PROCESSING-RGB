@@ -32,9 +32,9 @@ if uploaded_file:
     df_pixel = pd.DataFrame(data_pixel)
     st.dataframe(df_pixel, use_container_width=True)
 
-    # --- Menu Operasi via Dropdown ---
-    st.sidebar.subheader("Menu Operasi Citra")
-    ops = st.sidebar.selectbox("Pilih Operasi:", [
+    # --- Menu Operasi via Dropdown di Main Page ---
+    st.subheader("Menu Operasi Citra")
+    ops = st.selectbox("Pilih Operasi:", [
         "Grayscale",
         "Citra Biner",
         "Atur Kecerahan",
@@ -43,9 +43,10 @@ if uploaded_file:
         "Operasi Geometri"
     ])
 
-    if st.sidebar.button("Proses"):
+    # --- Tombol Proses ---
+    if st.button("Proses"):
         if ops == "Citra Biner":
-            threshold = st.sidebar.slider("Ambang Batas (0-255)", 0, 255, 128)
+            threshold = st.slider("Ambang Batas (0-255)", 0, 255, 128)
             gray = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
             _, bin_img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
             st.subheader("Hasil Citra Biner")
@@ -57,7 +58,7 @@ if uploaded_file:
             st.image(gray, use_column_width=True, clamp=True, channels="L")
 
         elif ops == "Atur Kecerahan":
-            brightness = st.sidebar.slider("Nilai Kecerahan (-255 sampai 255)", -255, 255, 30)
+            brightness = st.slider("Nilai Kecerahan (-255 sampai 255)", -255, 255, 30)
             if brightness >= 0:
                 bright_img = cv2.add(img_cv2, np.ones(img_cv2.shape, dtype=np.uint8) * brightness)
             else:
@@ -76,10 +77,8 @@ if uploaded_file:
                 sub_img = cv2.subtract(img_cv2, img2)
                 st.subheader("Hasil Penjumlahan & Pengurangan")
                 fig, ax = plt.subplots(1,2, figsize=(10,5))
-                ax[0].imshow(cv2.cvtColor(sum_img, cv2.COLOR_BGR2RGB))
-                ax[0].set_title("Penjumlahan"); ax[0].axis("off")
-                ax[1].imshow(cv2.cvtColor(sub_img, cv2.COLOR_BGR2RGB))
-                ax[1].set_title("Pengurangan"); ax[1].axis("off")
+                ax[0].imshow(cv2.cvtColor(sum_img, cv2.COLOR_BGR2RGB)); ax[0].set_title("Penjumlahan"); ax[0].axis("off")
+                ax[1].imshow(cv2.cvtColor(sub_img, cv2.COLOR_BGR2RGB)); ax[1].set_title("Pengurangan"); ax[1].axis("off")
                 st.pyplot(fig)
 
         elif ops == "Operasi Boolean":
