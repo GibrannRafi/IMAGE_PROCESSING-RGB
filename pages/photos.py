@@ -3,24 +3,34 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image, ImageOps
+import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Aplikasi Pengolahan Citra Digital (PCD)", layout="wide")
-
-st.title("📸 Aplikasi Pengolahan Citra Digital)")
+st.title("📸 Aplikasi Pengolahan Citra Digital (PCD)")
 
 # --- Upload Gambar ---
 uploaded_file = st.file_uploader("Unggah Gambar", type=['jpg','jpeg','png','bmp'])
 if uploaded_file:
-    # Baca gambar OpenCV & PIL
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     img_cv2 = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     img_rgb = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2RGB)
-    
+
     st.subheader("Gambar Asli")
     st.image(img_rgb, use_column_width=True)
-    
+
     max_h, max_w = img_rgb.shape[:2]
+
+    # --- TABEL PIXEL RGB 10x10 ---
+    st.subheader("Data Piksel (Interval 10x10)")
+    data_pixel = []
+    step = 10
+    for y in range(0, max_h, step):
+        for x in range(0, max_w, step):
+            r, g, b = img_rgb[y, x]
+            data_pixel.append({"Y Index": y, "X Index": x, "RGB Value": f"({r},{g},{b})"})
+    df_pixel = pd.DataFrame(data_pixel)
+    st.dataframe(df_pixel, use_container_width=True)
 
     # --- Operasi Citra ---
     st.sidebar.subheader("Menu Operasi Citra")
@@ -39,12 +49,12 @@ if uploaded_file:
         _, bin_img = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
         st.subheader("Hasil Citra Biner")
         st.image(bin_img, use_column_width=True, clamp=True, channels="L")
-    
+
     elif ops == "2. Grayscale":
         gray = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
         st.subheader("Hasil Grayscale")
         st.image(gray, use_column_width=True, clamp=True, channels="L")
-    
+
     elif ops == "3. Atur Kecerahan":
         brightness = st.sidebar.slider("Nilai Kecerahan (-255 sampai 255)", -255, 255, 30)
         if brightness >= 0:
@@ -72,7 +82,7 @@ if uploaded_file:
             ax[1].set_title("Pengurangan")
             ax[1].axis("off")
             st.pyplot(fig)
-    
+
     elif ops == "5. Operasi Boolean":
         uploaded_file2 = st.file_uploader("Unggah Gambar Kedua (Ukuran sama atau akan di-resize)", type=['jpg','jpeg','png','bmp'], key="boolean")
         if uploaded_file2:
@@ -97,7 +107,7 @@ if uploaded_file:
             ax[2,0].imshow(xor_img, cmap='gray'); ax[2,0].set_title("XOR"); ax[2,0].axis('off')
             ax[2,1].imshow(not_img, cmap='gray'); ax[2,1].set_title("NOT"); ax[2,1].axis('off')
             st.pyplot(fig)
-    
+
     elif ops == "6. Operasi Geometri":
         pil_img = Image.fromarray(img_rgb)
         flip_h = ImageOps.mirror(pil_img)
@@ -113,7 +123,7 @@ if uploaded_file:
         ax[1,1].imshow(rot_45); ax[1,1].set_title("Rot 45°"); ax[1,1].axis("off")
         ax[1,2].axis("off")
         st.pyplot(fig)
-    
+
     # --- Cari Piksel ---
     st.subheader("Cari Piksel RGB")
     x = st.number_input("X (Kolom)", min_value=0, max_value=max_w-1, value=0)
