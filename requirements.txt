@@ -1,7 +1,8 @@
-streamlit==1.38.0
-Pillow==10.4.0
-numpy==1.26.4
-pandas==2.2.3
-opencv-python-headless>=4.8.0
-streamlit-image-coordinates==0.1.7
+streamlit
+Pillow
+numpy
+pandas
+opencv-python>=4.8.0
+streamlit-image-coordinates
+tk
 matplotlib==3.9.2
