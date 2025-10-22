@@ -124,10 +124,21 @@ with right:
             # ----- STATS -----
             st.markdown('<div class="sub-box">', unsafe_allow_html=True)
             st.subheader("📍 Nilai Statistik")
+            mean_before = np.mean(gray)
+            mean_after = np.mean(eq)
             st.write(f"🧩 Peak Intensities: {peaks}")
             st.write(f"🧮 Threshold: {threshold}")
-            st.write(f"🌗 Mean Sebelum Equalization: {np.mean(gray):.2f}")
-            st.write(f"💡 Mean Setelah Equalization: {np.mean(eq):.2f}")
+            st.write(f"🌗 Mean Sebelum Equalization: {mean_before:.2f}")
+            st.write(f"💡 Mean Setelah Equalization: {mean_after:.2f}")
+
+            # Mean Histogram Visualization
+            fig3, ax3 = plt.subplots(figsize=(4,3))
+            ax3.bar(["Sebelum", "Sesudah"], [mean_before, mean_after], color=["gray", "blue"])
+            ax3.set_ylim(0, 255)
+            ax3.set_ylabel("Mean Intensity")
+            ax3.set_title("Perbandingan Mean Intensity")
+            st.pyplot(fig3)
+
             st.markdown('</div>', unsafe_allow_html=True)
 
             # ----- DOWNLOAD -----
