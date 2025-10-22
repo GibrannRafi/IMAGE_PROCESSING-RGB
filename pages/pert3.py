@@ -131,21 +131,30 @@ with right:
             st.write(f"🌗 Mean Sebelum Equalization: {mean_before:.2f}")
             st.write(f"💡 Mean Setelah Equalization: {mean_after:.2f}")
 
-            # ======= GANTI BAGIAN INI DOANG =======
+            # ======= HANYA BAGIAN INI DIUBAH =======
+            st.subheader("📉 Histogram Mean Sebelum & Sesudah Equalization")
+
+            # Histogram sebelum equalization
             fig3, ax3 = plt.subplots(figsize=(6,3))
-            ax3.hist(gray.flatten(), bins=256, range=(0,255), color='gray', alpha=0.6, label='Sebelum Equalization')
-            ax3.hist(eq.flatten(), bins=256, range=(0,255), color='blue', alpha=0.6, label='Setelah Equalization')
-
-            # garis mean
-            ax3.axvline(mean_before, color='black', linestyle='--', linewidth=1.5, label=f"Mean Sebelum = {mean_before:.2f}")
-            ax3.axvline(mean_after, color='red', linestyle='--', linewidth=1.5, label=f"Mean Setelah = {mean_after:.2f}")
-
+            ax3.hist(gray.flatten(), bins=256, range=(0,255), color='gray', alpha=0.8)
+            ax3.axvline(mean_before, color='red', linestyle='--', linewidth=1.5, label=f"Mean = {mean_before:.2f}")
             ax3.set_xlim(0, 255)
             ax3.set_xlabel("Intensity")
             ax3.set_ylabel("Frekuensi")
-            ax3.set_title("Histogram Distribusi Mean Sebelum & Sesudah Equalization")
+            ax3.set_title("Histogram Sebelum Equalization")
             ax3.legend()
             st.pyplot(fig3)
+
+            # Histogram sesudah equalization
+            fig4, ax4 = plt.subplots(figsize=(6,3))
+            ax4.hist(eq.flatten(), bins=256, range=(0,255), color='blue', alpha=0.8)
+            ax4.axvline(mean_after, color='red', linestyle='--', linewidth=1.5, label=f"Mean = {mean_after:.2f}")
+            ax4.set_xlim(0, 255)
+            ax4.set_xlabel("Intensity")
+            ax4.set_ylabel("Frekuensi")
+            ax4.set_title("Histogram Setelah Equalization")
+            ax4.legend()
+            st.pyplot(fig4)
             # ======= SAMPE SINI =======
 
             st.markdown('</div>', unsafe_allow_html=True)
