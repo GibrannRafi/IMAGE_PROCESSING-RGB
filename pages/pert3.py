@@ -109,57 +109,40 @@ with right:
             c2.image(binary, caption=f"Citra Biner (Threshold={threshold})", use_column_width=True)
             c3.image(eq, caption="Equalized Image", use_column_width=True)
 
-            # ----- HISTOGRAMS -----
-            st.subheader("📊 Histogram Grayscale")
-            fig1, ax1 = plt.subplots(figsize=(6,3))
-            ax1.plot(hist, color='black')
-            ax1.set_title("Histogram Grayscale Sebelum Equalization")
-            st.pyplot(fig1)
+            # ----- HISTOGRAM BEFORE-AFTER -----
+            st.subheader("📊 Histogram Equalization - Before & After (Grayscale)")
+            fig5, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+            ax1.plot(hist, color='gray')
+            ax1.set_title("Before")
+            ax1.set_xlim(0, 255)
+            ax1.set_xlabel("Intensity")
+            ax1.set_ylabel("Frequency")
 
-            fig2, ax2 = plt.subplots(figsize=(6,3))
-            ax2.plot(np.histogram(eq.flatten(), bins=256, range=(0,255))[0], color='blue')
-            ax2.set_title("Histogram Setelah Equalization")
-            st.pyplot(fig2)
+            hist_eq_values, _ = np.histogram(eq.flatten(), bins=256, range=(0,255))
+            ax2.plot(hist_eq_values, color='blue')
+            ax2.set_title("After")
+            ax2.set_xlim(0, 255)
+            ax2.set_xlabel("Intensity")
+
+            st.pyplot(fig5)
 
             # ----- STATS -----
-            st.markdown('<div class="sub-box">', unsafe_allow_html=True)
-            st.subheader("📍 Nilai Statistik")
             mean_before = np.mean(gray)
             mean_after = np.mean(eq)
-            st.write(f"🧩 Peak Intensities: {peaks}")
-            st.write(f"🧮 Threshold: {threshold}")
-            st.write(f"🌗 Mean Sebelum Equalization: {mean_before:.2f}")
-            st.write(f"💡 Mean Setelah Equalization: {mean_after:.2f}")
+            st.markdown(f"**Mean sebelum:** {mean_before:.2f} — **Mean sesudah:** {mean_after:.2f}")
 
-            # ======= HANYA BAGIAN INI DIUBAH =======
-            st.subheader("📉 Histogram Mean Sebelum & Sesudah Equalization")
+            # ----- TABLE HISTOGRAM -----
+            st.subheader("📋 Tabel Nilai Intensitas & Frekuensi (Grayscale Sebelum)")
+            hist_df = pd.DataFrame({
+                "Intensitas": np.arange(256),
+                "Frekuensi": hist
+            })
+            st.dataframe(hist_df)
 
-            # Histogram sebelum equalization
-            fig3, ax3 = plt.subplots(figsize=(6,3))
-            ax3.hist(gray.flatten(), bins=256, range=(0,255), color='gray', alpha=0.8)
-            ax3.axvline(mean_before, color='red', linestyle='--', linewidth=1.5, label=f"Mean = {mean_before:.2f}")
-            ax3.set_xlim(0, 255)
-            ax3.set_xlabel("Intensity")
-            ax3.set_ylabel("Frekuensi")
-            ax3.set_title("Histogram Sebelum Equalization")
-            ax3.legend()
-            st.pyplot(fig3)
+            csv = hist_df.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 Download Histogram Grayscale CSV", csv, "histogram_grayscale.csv", "text/csv")
 
-            # Histogram sesudah equalization
-            fig4, ax4 = plt.subplots(figsize=(6,3))
-            ax4.hist(eq.flatten(), bins=256, range=(0,255), color='blue', alpha=0.8)
-            ax4.axvline(mean_after, color='red', linestyle='--', linewidth=1.5, label=f"Mean = {mean_after:.2f}")
-            ax4.set_xlim(0, 255)
-            ax4.set_xlabel("Intensity")
-            ax4.set_ylabel("Frekuensi")
-            ax4.set_title("Histogram Setelah Equalization")
-            ax4.legend()
-            st.pyplot(fig4)
-            # ======= SAMPE SINI =======
-
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # ----- DOWNLOAD -----
+            # ----- DOWNLOAD HASIL GAMBAR -----
             st.markdown('<div class="sub-box">', unsafe_allow_html=True)
             st.subheader("💾 Download Hasil")
             def save_img(np_arr, name):
