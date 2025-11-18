@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 st.title("🔍 Deteksi Tepi pada Citra")
-st.write("Upload gambar untuk melihat hasil deteksi tepi (Canny).")
+st.write("Upload gambar dan sistem akan melakukan deteksi tepi otomatis.")
 
 # Upload file
 uploaded_file = st.file_uploader("Upload gambar", type=["jpg", "jpeg", "png"])
@@ -12,23 +12,18 @@ uploaded_file = st.file_uploader("Upload gambar", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
     # Baca gambar
     image = Image.open(uploaded_file)
-    img_array = np.array(image)
+    img = np.array(image)
 
     # Tampilkan gambar asli
     st.subheader("Gambar Asli")
-    st.image(img_array, use_column_width=True)
+    st.image(img, use_column_width=True)
 
     # Konversi ke grayscale
-    gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Slider untuk threshold Canny
-    st.subheader("Pengaturan Canny Edge Detection")
-    thresh1 = st.slider("Threshold 1", 0, 255, 100)
-    thresh2 = st.slider("Threshold 2", 0, 255, 200)
-
-    # Deteksi tepi
-    edges = cv2.Canny(gray, thresh1, thresh2)
+    # Deteksi tepi otomatis (Canny default)
+    edges = cv2.Canny(gray, 100, 200)
 
     # Tampilkan hasil
-    st.subheader("Hasil Deteksi Tepi")
+    st.subheader("Hasil Deteksi Tepi (Canny)")
     st.image(edges, use_column_width=True, clamp=True)
