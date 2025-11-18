@@ -5,6 +5,13 @@ from PIL import Image
 
 st.title("🔍 Canny Edge Detection – Step by Step")
 
+# Normalisasi biar bisa ditampilkan di Streamlit
+def norm(img):
+    img = img.astype("float32")
+    m = img.min()
+    M = img.max()
+    return (img - m) / (M - m + 1e-6)
+
 uploaded = st.file_uploader("Upload gambar", type=["jpg", "png", "jpeg"])
 
 if uploaded:
@@ -35,35 +42,29 @@ if uploaded:
 
     for i in range(1, rows - 1):
         for j in range(1, cols - 1):
-            try:
-                q = 255
-                r = 255
+            q = r = 255
 
-                # 0 degrees
-                if (0 <= angle[i,j] < 22.5) or (157.5 <= angle[i,j] <= 180):
-                    q = magnitude[i, j+1]
-                    r = magnitude[i, j-1]
-                # 45 degrees
-                elif (22.5 <= angle[i,j] < 67.5):
-                    q = magnitude[i+1, j-1]
-                    r = magnitude[i-1, j+1]
-                # 90 degrees
-                elif (67.5 <= angle[i,j] < 112.5):
-                    q = magnitude[i+1, j]
-                    r = magnitude[i-1, j]
-                # 135 degrees
-                elif (112.5 <= angle[i,j] < 157.5):
-                    q = magnitude[i-1, j-1]
-                    r = magnitude[i+1, j+1]
+            # 0 degrees
+            if (0 <= angle[i,j] < 22.5) or (157.5 <= angle[i,j] <= 180):
+                q = magnitude[i, j+1]
+                r = magnitude[i, j-1]
+            # 45 degrees
+            elif (22.5 <= angle[i,j] < 67.5):
+                q = magnitude[i+1, j-1]
+                r = magnitude[i-1, j+1]
+            # 90 degrees
+            elif (67.5 <= angle[i,j] < 112.5):
+                q = magnitude[i+1, j]
+                r = magnitude[i-1, j]
+            # 135 degrees
+            elif (112.5 <= angle[i,j] < 157.5):
+                q = magnitude[i-1, j-1]
+                r = magnitude[i+1, j+1]
 
-                if (magnitude[i,j] >= q) and (magnitude[i,j] >= r):
-                    nms[i,j] = magnitude[i,j]
-                else:
-                    nms[i,j] = 0
-            except:
-                pass
+            if (magnitude[i,j] >= q) and (magnitude[i,j] >= r):
+                nms[i,j] = magnitude[i,j]
 
-    # 6. Double Threshold (AUTO)
+    # 6. Double Threshold
     high = nms.max() * 0.2
     low = high * 0.5
 
@@ -89,13 +90,16 @@ if uploaded:
 
     # Show results
     st.image(img, caption="Original Image")
-    
+
     st.subheader("Proses Canny:")
     st.image(gray, caption="1. Grayscale")
     st.image(gaussian, caption="2. Gaussian Blur")
-    st.image(sobelx, caption="3. Sobel Gx")
-    st.image(sobely, caption="4. Sobel Gy")
-    st.image(magnitude, caption="5. Gradient Magnitude")
+
+    # PAKAI NORMALISASI untuk Sobel
+    st.image(norm(sobelx), caption="3. Sobel Gx", clamp=True)
+    st.image(norm(sobely), caption="4. Sobel Gy", clamp=True)
+
+    st.image(magnitude, caption="5. Gradient Magnitude (Normalized)")
     st.image(nms, caption="6. Non-Max Suppression (NMS)")
     st.image(dt, caption="7. Double Threshold")
     st.image(hysteresis, caption="8. Hysteresis (Final Edge)")
