@@ -153,30 +153,31 @@ def main():
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat pemrosesan: {e}")
 
-    elif operation == "Ungkap Teks (Decode)":
-        st.header("🔍 Ungkap Teks dari Gambar")
+elif operation == "Ungkap Teks (Decode)":
+    st.header("🔍 Ungkap Teks dari Gambar")
         
-        # Upload Gambar Stegano
-        uploaded_stegano = st.file_uploader("Pilih Citra Hasil Stegano (PNG direkomendasikan)", 
-                                            type=["png", "jpg", "jpeg"])
+    uploaded_stegano = st.file_uploader("Pilih Citra Hasil Stegano (PNG direkomendasikan)", 
+                                        type=["png", "jpg", "jpeg"])
         
-        if uploaded_stegano:
-            try:
-                stegano_image = Image.open(uploaded_stegano).convert("RGB")
+    if uploaded_stegano:
+        try:
+            stegano_image = Image.open(uploaded_stegano).convert("RGB")
+            st.image(stegano_image, caption="Citra Stegano yang Diunggah", use_column_width=True)
                 
-                st.image(stegano_image, caption="Citra Stegano yang Diunggah", use_column_width=True)
-                
-                if st.button("Lakukan Decoding"):
-                    # Lakukan Decoding
-                    st.info("Sedang mencoba mengungkap teks rahasia...")
-                    decoded_text = decode_text(stegano_image)
-                    
-                    st.subheader("Teks yang Diungkap")
-                    st.markdown(f"> **Teks Rahasia:**")
+            if st.button("Lakukan Decoding"):
+                st.info("Sedang mencoba mengungkap teks rahasia...")
+                decoded_text = decode_text(stegano_image)
+
+                st.subheader("Teks yang Diungkap")
+
+                if decoded_text.startswith("Tidak ada teks"):
+                    st.error("❌ Tidak ditemukan pesan dalam gambar ini.")
+                else:
+                    st.success("✅ Pesan berhasil ditemukan di dalam gambar!")
                     st.code(decoded_text, language='text')
-                    
-            except Exception as e:
-                st.error(f"Terjadi kesalahan saat pemrosesan: {e}")
+
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat pemrosesan: {e}")
 
 if __name__ == "__main__":
     main()
