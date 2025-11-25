@@ -33,7 +33,7 @@ def encode_text(image, text):
                     # (pixel_value & ~1) -> set LSB ke 0
                     # | int(binary_text[data_index]) -> set LSB ke bit teks
                   new_pixel_value = np.bitwise_and(pixel_value, 254) | int(binary_text[data_index])
-img_array[i, j, k] = new_pixel_value
+                    img_array[i, j, k] = new_pixel_value
                     
                     data_index += 1
                 else:
